@@ -30,7 +30,7 @@ fun shortTime(t:String)=t.replace('T',' ').substringAfter(' ',"").take(5).ifBlan
 fun performance(raw:Any?):List<Pair<String,Double>> =flexibleArray(raw).objects().mapNotNull{j->j.number("score")?.let{j.safeText("item") to it}}
 
 @Composable fun TripTimelineCard(item:JSONObject,charge:Boolean,onClick:()->Unit){
- Box(Modifier.fillMaxWidth().background(glassWhite,RoundedCornerShape(19.dp)).border(.7.dp,glassEdge,RoundedCornerShape(19.dp)).clickable(onClick=onClick).padding(15.dp)){
+ Box(Modifier.fillMaxWidth().background(glassWhite,RoundedCornerShape(19.dp)).border(.7.dp,glassEdge,RoundedCornerShape(19.dp)).clickable(onClickLabel=if(charge)"查看充电详情"else"查看行程详情",onClick=onClick).padding(15.dp)){
   if(charge)Column(verticalArrangement=Arrangement.spacedBy(12.dp)){RecordPreview(item,true);Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.End){Text("充电详情",fontSize=13.sp,color=accent);Icon(Icons.Outlined.ChevronRight,null,tint=accent,modifier=Modifier.size(16.dp))}}
   else Column(verticalArrangement=Arrangement.spacedBy(12.dp)){
    Row(verticalAlignment=Alignment.CenterVertically){Text(shortTime(item.safeText("tripStartTime"))+" – "+shortTime(item.safeText("tripEndTime")),fontSize=17.sp,fontWeight=FontWeight.Bold,color=ink,modifier=Modifier.weight(1f));Text(if(item.number("tripEnergyConsumption")!=null)numberText(item.number("tripEnergyConsumption"))+" kWh/100km"else"行程记录",fontSize=12.sp,color=Color(0xFF4386DD),modifier=Modifier.background(Color(0xFF4386DD).copy(alpha=.09f),RoundedCornerShape(5.dp)).padding(horizontal=6.dp,vertical=3.dp));Icon(Icons.Outlined.ChevronRight,null,tint=accent,modifier=Modifier.size(18.dp))}
@@ -77,12 +77,22 @@ fun performance(raw:Any?):List<Pair<String,Double>> =flexibleArray(raw).objects(
      Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Text("最高速度",fontSize=14.sp,color=muted);Text(numberText(data.number("maxSpeed"))+" km/h",fontSize=14.sp,color=accent,fontWeight=FontWeight.SemiBold)}
      data.number("maxSpeed")?.let{speed->val fill=accent;val track=softWash;Canvas(Modifier.fillMaxWidth().height(5.dp)){drawRoundRect(track,cornerRadius=androidx.compose.ui.geometry.CornerRadius(8f));drawRoundRect(Brush.horizontalGradient(listOf(fill.copy(alpha=.45f),fill)),size=androidx.compose.ui.geometry.Size(size.width*(speed/180).toFloat().coerceIn(0f,1f),size.height),cornerRadius=androidx.compose.ui.geometry.CornerRadius(8f))}}
     }
+    if(data.optBoolean("_teslamate")){
+     val samples=data.optJSONObject("track")?.optJSONArray("speedSamples")?:JSONArray()
+     if(samples.length()>1){var curve by remember{mutableStateOf("speed")};Panel{SectionTitle("行程采样",Icons.Outlined.ShowChart)
+      CompactSegments(listOf("speed" to "速度","power" to "功率","batteryLevel" to "电量"),curve,{curve=it})
+      InteractiveTrend("行程采样 · "+if(curve=="speed")"速度"else if(curve=="power")"功率"else"电量",if(curve=="speed")"km/h"else if(curve=="power")"kW"else"%",chartSamples(samples,curve,dateKey="time"))
+      Text("展示实际采样的抽样曲线，缺失点不补零。",fontSize=12.sp,color=muted)
+     }}
+    }
     TripNotebook(api,data)
     Panel{SectionTitle("行程路径",Icons.Outlined.LocationOn);RouteDetailRow("起点",data.safeText("startLocation","出发地"),shortTime(data.safeText("tripStartTime")),Color(0xFF2EC786));RouteDetailRow("终点",data.safeText("endLocation","目的地"),shortTime(data.safeText("tripEndTime")),Color(0xFFFF685A))}
+    if(data.optBoolean("_teslamate"))Text("能耗为 TeslaMate 按额定续航变化估算，缺失项保留为空。",fontSize=12.sp,color=muted)
     Panel{SectionTitle("行程信息",Icons.Outlined.Bolt)
      val rows=listOf(Triple("行程能耗",numberText(data.number("tripEnergyConsumption")),"kWh/100km"),Triple("累计耗电",numberText(data.number("totalPowerConsumption")),"kWh"),Triple("怠速耗电",numberText(data.number("idlePowerConsumption")),"kWh"),Triple("起止续航",numberText(data.number("startRemainingRange"))+" → "+numberText(data.number("endRemainingRange")),"km"),Triple("消耗预估续航",numberText(data.number("consumedRange")),"km"),Triple("续航达成率",numberText(data.number("consumptionAchievementRate")),"%"))
      rows.chunked(2).forEach{chunk->Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max),horizontalArrangement=Arrangement.spacedBy(8.dp)){chunk.forEach{(label,value,unit)->DetailMetric(label,value,unit,metricIcon(label),Modifier.weight(1f))}}}
     }
+    if(!data.optBoolean("_teslamate")){
     Panel{SectionTitle("驾驶评分",Icons.Outlined.VerifiedUser);val scores=performance(data.opt("drivingPerformance"));if(scores.isEmpty())Text("暂无驾驶评分数据",color=muted,fontSize=14.sp)else DrivingRadar(scores)}
     Panel{SectionTitle("能耗分布",Icons.Outlined.DonutLarge);val values=performance(data.opt("energyPerformance")).filter{it.second>=0};if(values.isEmpty())Text("暂无能耗分布数据",fontSize=14.sp,color=muted)else EnergyRing(values,numberText(data.number("tripEnergyConsumption")),"kWh/100km")}
     Panel{
@@ -93,6 +103,7 @@ fun performance(raw:Any?):List<Pair<String,Double>> =flexibleArray(raw).objects(
      val reasons=insight?.optJSONArray("reasons")?:JSONArray();for(i in 0 until reasons.length())Row(Modifier.fillMaxWidth().height(IntrinsicSize.Max),horizontalArrangement=Arrangement.spacedBy(8.dp)){Box(Modifier.padding(top=7.dp).size(4.dp).background(muted,CircleShape));Text(reasons.optString(i),fontSize=14.sp,lineHeight=20.sp,color=muted)}
      insight?.safeText("advice")?.takeIf{it.isNotBlank()}?.let{advice->Column(Modifier.fillMaxWidth().background(accent.copy(alpha=.065f),RoundedCornerShape(13.dp)).padding(13.dp),verticalArrangement=Arrangement.spacedBy(6.dp)){Text("驾驶建议",fontSize=13.sp,color=accent,fontWeight=FontWeight.SemiBold);Text(advice,fontSize=14.sp,lineHeight=20.sp,color=ink)}}
     }
+  }
  }
 }
 @Composable private fun RouteDetailRow(label:String,address:String,time:String,tint:Color){Row(Modifier.fillMaxWidth().background(softWash,RoundedCornerShape(13.dp)).padding(12.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(9.dp)){Box(Modifier.size(7.dp).background(tint,CircleShape));Text(label,color=muted,fontSize=13.sp);Text(address,color=ink,fontSize=14.sp,fontWeight=FontWeight.Medium,modifier=Modifier.weight(1f));Text(time,fontSize=13.sp,color=muted)}}

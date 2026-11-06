@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.*
 
 internal fun homePreset(name:String):List<String> = when(name){"日常"->listOf("vehicle","range","summary","condition","ledger","sentry","temperature","brief","recentTrip","analysis","report");"长途"->listOf("vehicle","range","brief","recentTrip","energyTrend","driving","efficiency","time","analysis");"补能"->listOf("vehicle","range","charging","recentCharge","summary","comparison","report");else->homeCardIds}
 @Composable internal fun HomeCardManager(service:String,carId:String,onChanged:()->Unit,onClose:()->Unit,dashboard:JSONObject?=null,car:JSONObject?=null){
+ val available=if(car?.optBoolean("_teslamate")==true)homeCardIds.filter{it in teslaMateHomeCards}else homeCardIds
  val context=LocalContext.current;val store=remember{HomeLayoutStore(context)};var hidden by remember{mutableStateOf(store.hidden(service,carId))}
  fun update(ids:List<String>){store.saveOrder(service,carId,normalizedHomeOrder(ids));hidden=homeCardIds.toSet()-ids.toSet();store.saveHidden(service,carId,hidden);onChanged()}
  FlowDetailPanel(onClose,title={Text("首页卡片")},body={Column(verticalArrangement=Arrangement.spacedBy(12.dp)){
@@ -22,7 +23,7 @@ internal fun homePreset(name:String):List<String> = when(name){"日常"->listOf(
  CompactSegments(listOf("日常","长途","补能").map{it to it},"",{update(homePreset(it))})
  CinemaTextButton({update(homeCardIds)}){Icon(Icons.Outlined.RestartAlt,null,Modifier.size(16.dp));Text("恢复全部卡片和顺序")}
  Text("下方展示当前主题的卡片预览；数值来自最近同步，未返回时保留为空。",fontSize=12.sp,color=muted)
- homeCardIds.forEach{id->Column(Modifier.fillMaxWidth().background(softWash.copy(alpha=.5f),RoundedCornerShape(20.dp)).border(if(id !in hidden)1.dp else .5.dp,if(id !in hidden)accent.copy(alpha=.35f)else glassEdge,RoundedCornerShape(20.dp)).padding(10.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
+ available.forEach{id->Column(Modifier.fillMaxWidth().background(softWash.copy(alpha=.5f),RoundedCornerShape(20.dp)).border(if(id !in hidden)1.dp else .5.dp,if(id !in hidden)accent.copy(alpha=.35f)else glassEdge,RoundedCornerShape(20.dp)).padding(10.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
   Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){Text(homeCardTitle(id),Modifier.weight(1f),fontSize=14.sp);Switch(id !in hidden,{visible->hidden=if(visible)hidden-id else hidden+id;store.saveHidden(service,carId,hidden);onChanged()})}
   HomeCardStylePreview(id,dashboard?:JSONObject(),car)
  }}

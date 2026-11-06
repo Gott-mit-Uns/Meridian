@@ -13,15 +13,15 @@ val localSettings=Properties().apply {
 
 android {
     namespace = "app.meridian.mobile"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "app.meridian.mobile"
         minSdk = 26
         targetSdk = 35
         testInstrumentationRunner = "app.meridian.mobile.VisualInspection"
-        versionCode = 52
-        versionName = "0.52.0"
+        versionCode = 53
+        versionName = "0.53.0"
     }
 
     signingConfigs.getByName("debug") {

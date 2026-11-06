@@ -14,16 +14,16 @@ import kotlinx.coroutines.*
 import org.json.JSONObject
 
 internal fun monthlyShareValues(data:JSONObject,includeStory:Boolean):JSONObject=JSONObject().apply{
- for(key in listOf("month","availDays","monthMileage","totalEnergyConsumption","avgEnergyConsumption","maxTripMileage","maxTripDuration","hnoaMileage","cnoaMileage","basicPilotMileage","apaCnt","parkingCnt","avpCnt","drivingEnergyPercent","tempCtrlEnergyPercent","deviceEnergyPercent","otherEnergyPercent"))if(data.has(key)&&!data.isNull(key))put(key,data.get(key))
+ for(key in listOf("_teslamate","knownEnergyConsumption","energyCoverage","month","availDays","monthMileage","totalEnergyConsumption","avgEnergyConsumption","maxTripMileage","maxTripDuration","hnoaMileage","cnoaMileage","basicPilotMileage","apaCnt","parkingCnt","avpCnt","drivingEnergyPercent","tempCtrlEnergyPercent","deviceEnergyPercent","otherEnergyPercent"))if(data.has(key)&&!data.isNull(key))put(key,data.get(key))
  if(includeStory)put("storySummary",data.safeText("storySummary").take(900))
 }
 
 private suspend fun createMonthlyPoster(source:JSONObject,month:String,includeStory:Boolean,colors:PosterTheme,fullReport:Boolean,coverStyle:String,nickname:String):Bitmap=withContext(Dispatchers.Default){
  val data=monthlyShareValues(source,includeStory)
- val metrics=listOf(Triple("用车天数","availDays","天"),Triple("行驶里程","monthMileage","km"),Triple("累计耗电","totalEnergyConsumption","kWh"),Triple("平均能耗","avgEnergyConsumption","kWh/100km"),Triple("单次最远","maxTripMileage","km"),Triple("单次最长","maxTripDuration",""),Triple("高速领航","hnoaMileage","km"),Triple("城市领航","cnoaMileage","km"),Triple("基础辅助","basicPilotMileage","km"),Triple("自动泊车","apaCnt","次"),Triple("代客泊车","avpCnt","次"),Triple("行驶能耗占比","drivingEnergyPercent","%"),Triple("温控能耗占比","tempCtrlEnergyPercent","%"),Triple("设备能耗占比","deviceEnergyPercent","%"),Triple("其他能耗占比","otherEnergyPercent","%")).filter{data.has(it.second)}.map{(label,key,unit)->HomeMetricValue(label,if(key=="maxTripDuration")data.number(key)?.let{durationText(it.toLong())}?:"—"else homeValue(data.opt(key)),unit)}
+ val metrics=listOf(Triple("用车天数","availDays","天"),Triple("行驶里程","monthMileage","km"),Triple(if(data.optBoolean("_teslamate"))"已知估算耗电"else"累计耗电",if(data.optBoolean("_teslamate"))"knownEnergyConsumption"else"totalEnergyConsumption","kWh"),Triple("平均能耗","avgEnergyConsumption","kWh/100km"),Triple("单次最远","maxTripMileage","km"),Triple("单次最长","maxTripDuration",""),Triple("高速领航","hnoaMileage","km"),Triple("城市领航","cnoaMileage","km"),Triple("基础辅助","basicPilotMileage","km"),Triple("自动泊车","apaCnt","次"),Triple("代客泊车","avpCnt","次"),Triple("行驶能耗占比","drivingEnergyPercent","%"),Triple("温控能耗占比","tempCtrlEnergyPercent","%"),Triple("设备能耗占比","deviceEnergyPercent","%"),Triple("其他能耗占比","otherEnergyPercent","%")).filter{data.has(it.second)}.map{(label,key,unit)->HomeMetricValue(label,if(key=="maxTripDuration")data.number(key)?.let{durationText(it.toLong())}?:"—"else homeValue(data.opt(key)),unit)}
  val rows=flexibleArray(source.opt("dayMileages"))
  val selection=shareReportContent(metrics,monthlyReportCharts(source),fullReport)
- val story=data.safeText("storySummary");val excerpt=if(fullReport||story.length<=180)story else story.take(180)+"…"
+ val story=listOf(data.safeText("energyCoverage"),data.safeText("storySummary")).filter{it.isNotBlank()}.joinToString("\n");val excerpt=if(fullReport||story.length<=180)story else story.take(180)+"…"
  usagePoster("月度用车回顾",month,selection.metrics,story=excerpt,visualCharts=selection.charts,colors=colors,coverStyle=coverStyle,nickname=nickname)
 }
 

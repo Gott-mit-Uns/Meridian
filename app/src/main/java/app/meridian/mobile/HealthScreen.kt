@@ -43,18 +43,19 @@ import java.time.LocalDate
  var filterOpen by remember{mutableStateOf(false)}
  if(filterOpen)FlowDetailPanel(onDismiss={filterOpen=false},title={Text("车况筛选")},body={Column(verticalArrangement=Arrangement.spacedBy(12.dp)){
   CompactSegments(listOf(7 to "近7天",30 to "近30天"),days,{days=it;page=1})
-  CinemaChoice(excludeParking,{excludeParking=!excludeParking;page=1},{Text("隐藏驻车")})
+  CinemaChoice(excludeParking,{excludeParking=!excludeParking;page=1},{Text(if(api.isTeslaMate)"曲线仅显示车速大于0的采样"else"隐藏驻车")})
  }},confirm={CinemaButton({filterOpen=false}){Text("完成")}})
  FullscreenDataPage("车况详情",onClose,action={ToolbarActionStrip(listOf(ToolbarAction(Icons.Outlined.Tune,"车况筛选",active=days!=7||excludeParking){filterOpen=true}))},refreshing=loading,onRefresh={retry++},lastSynced=responseSyncTime(summary)){
   CachedReadStatus(summary){retry++}
-  Text("近 $days 天"+if(excludeParking)" · 已隐藏驻车"else"",fontSize=12.sp,color=muted)
+  summary?.safeText("coverageNote")?.takeIf{it.isNotBlank()}?.let{Text(it,fontSize=12.sp,color=muted)}
+  Text("近 $days 天"+if(excludeParking)if(api.isTeslaMate)" · 曲线已筛选行驶采样"else" · 已隐藏驻车"else"",fontSize=12.sp,color=muted)
   if(loading)FlowLoading(label="正在更新车况…")
   if(issue.isNotBlank())Panel{Text(issue,color=muted);CinemaOutlineButton({retry++}){Text("重新加载")}}
   summary?.optJSONObject("eventOverview")?.let{overview->
    Panel{
     Text("状态概览",fontSize=17.sp,fontWeight=FontWeight.Medium,color=ink)
     Text("近 $days 天 · 车辆状态事件",fontSize=12.sp,color=muted)
-    val events=listOf(Triple("异常提醒","anomalyEvents",Icons.Outlined.HealthAndSafety),Triple("充电事件","chargeEvents",Icons.Outlined.EvStation),Triple("行驶事件","drivingEvents",Icons.Outlined.Route),Triple("驻车事件","parkingEvents",Icons.Outlined.LocalParking)).filter{!excludeParking||it.second!="parkingEvents"}
+    val events=listOf(Triple("异常提醒","anomalyEvents",Icons.Outlined.HealthAndSafety),Triple("充电事件","chargeEvents",Icons.Outlined.EvStation),Triple("行驶事件","drivingEvents",Icons.Outlined.Route),Triple("驻车事件","parkingEvents",Icons.Outlined.LocalParking)).filter{overview.has(it.second)&&(!excludeParking||it.second!="parkingEvents")}
     events.chunked(2).forEach{chunk->EqualCardRow(chunk.size,surface={_,m->Box(m.background(softWash,RoundedCornerShape(16.dp)))}){i->
      val e=chunk[i];Column(verticalArrangement=Arrangement.spacedBy(8.dp)){
       Icon(e.third,null,tint=if(e.second=="anomalyEvents"&&overview.optInt(e.second)>0)Color(0xFFD18B58)else Color(0xFF689D91),modifier=Modifier.size(21.dp))
