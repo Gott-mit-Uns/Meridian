@@ -1,0 +1,4 @@
+package app.meridian.mobile
+import androidx.compose.ui.graphics.*
+internal data class PosterTheme(val background:List<Int> = listOf(0xFFF4F7FB.toInt()),val card:Int=0xFFFFFFFF.toInt(),val text:Int=0xFF1E2939.toInt(),val muted:Int=0xFF728091.toInt(),val accent:Int=0xFF5377A9.toInt(),val border:Int=0xFFE3EAF3.toInt(),val wash:Int=0xFFEDF1F6.toInt(),val chartColors:List<Int> = listOf(0xFF5377A9.toInt(),0xFF6B9E97.toInt(),0xFF9E90B9.toInt(),0xFFCBAB78.toInt()),val heroStart:Int=0xFF253850.toInt(),val heroEnd:Int=0xFF3D5672.toInt())
+internal fun posterTheme(p:MeridianPalette)=PosterTheme(p.background.map{it.toArgb()},p.surface.toArgb(),p.text.toArgb(),p.secondary.toArgb(),p.accent.toArgb(),p.border.toArgb(),p.wash.toArgb(),themeChartColors(p).map{it.toArgb()},lerp(p.accent,Color.Black,.62f).toArgb(),lerp(p.accent,Color.Black,.38f).toArgb())

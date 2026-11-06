@@ -1,0 +1,5 @@
+<resources><string name="widget_description">电量、续航与今日用车，显示最近同步的数据</string><string name="widget_preview_brand">MERIDIAN</string><string name="widget_preview_fields">电量 · 续航 · 里程
+支持调整大小和自定义内容</string><string name="widget_preview_battery">剩余电量\n— %</string>
+<string name="widget_preview_range">剩余续航 · — km</string>
+<string name="widget_preview_support">今日里程 —　车内温度 —</string>
+</resources>

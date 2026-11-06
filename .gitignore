@@ -1,0 +1,30 @@
+# Machine configuration and credentials
+local.properties
+*.keystore
+*.jks
+*.p12
+*.pem
+.env
+.env.*
+!.env.example
+secrets/
+
+# Android/Gradle outputs
+.gradle/
+.kotlin/
+**/build/
+captures/
+*.apk
+*.aab
+*.ap_
+
+# IDE and OS
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Never commit personal exports or scratch files
+*.log
+*.xmbak
+private/
