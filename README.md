@@ -33,22 +33,26 @@ Meridian 与 Xiaomi EV Mate、Xiaomi/小米汽车不存在官方隶属或背书�
 
 以下为作者提供的真实 App 截图，部分地址已通过隐私模式隐藏；截图展示的数据和车图不代表所有车辆的可用字段或外观适配。
 
-<table>
+<table width="100%">
   <tr>
-    <td align="center"><b>爱车首页</b><br/><img src="docs/screenshots/home.webp" width="245" alt="爱车首页、卡片和玻璃导航栏"/></td>
-    <td align="center"><b>用车账单</b><br/><img src="docs/screenshots/ledger.webp" width="245" alt="费用总览、分类和账单明细"/></td>
-    <td align="center"><b>行程详情</b><br/><img src="docs/screenshots/trip.webp" width="245" alt="行程地图、概览和手记"/></td>
+    <td width="50%" align="center" valign="top"><b>爱车首页</b><br/><br/><img src="docs/screenshots/home.webp" width="320" alt="爱车首页、卡片和玻璃导航栏"/></td>
+    <td width="50%" align="center" valign="top"><b>用车账单</b><br/><br/><img src="docs/screenshots/ledger.webp" width="320" alt="费用总览、分类和账单明细"/></td>
   </tr>
   <tr>
-    <td align="center"><b>AI 助手</b><br/><img src="docs/screenshots/assistant.webp" width="245" alt="AI助手欢迎页和推荐问题"/></td>
-    <td align="center"><b>用车统计</b><br/><img src="docs/screenshots/statistics.webp" width="245" alt="用车概况和多彩数据卡片"/></td>
-    <td align="center"><b>主题分享</b><br/><img src="docs/screenshots/sharing.webp" width="245" alt="统计报告分享和图片预览"/></td>
+    <td width="50%" align="center" valign="top"><b>行程详情</b><br/><br/><img src="docs/screenshots/trip.webp" width="320" alt="行程地图、概览和手记"/></td>
+    <td width="50%" align="center" valign="top"><b>AI 助手</b><br/><br/><img src="docs/screenshots/assistant.webp" width="320" alt="AI助手欢迎页和推荐问题"/></td>
   </tr>
   <tr>
-    <td align="center"><b>管理与设置</b><br/><img src="docs/screenshots/settings.webp" width="245" alt="车辆、头像、外观和功能管理"/></td>
-    <td colspan="2">支持浅色 / 深色、不同卡片分色主题、玻璃导航外观，以及首页卡片排序与显示设置。具体效果会随系统版本、设备和设置变化。</td>
+    <td width="50%" align="center" valign="top"><b>用车统计</b><br/><br/><img src="docs/screenshots/statistics.webp" width="320" alt="用车概况和多彩数据卡片"/></td>
+    <td width="50%" align="center" valign="top"><b>主题分享</b><br/><br/><img src="docs/screenshots/sharing.webp" width="320" alt="统计报告分享和图片预览"/></td>
+  </tr>
+  <tr>
+    <td width="50%" align="center" valign="top"><b>管理与设置</b><br/><br/><img src="docs/screenshots/settings.webp" width="320" alt="车辆、头像、外观和功能管理"/></td>
+    <td width="50%" valign="top"></td>
   </tr>
 </table>
+
+支持浅色 / 深色、不同卡片分色主题、玻璃导航外观，以及首页卡片排序与显示设置。具体效果会随系统版本、设备和设置变化。
 
 ## 功能概览
 
