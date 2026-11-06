@@ -19,7 +19,7 @@ class VisualInspection:Instrumentation(){
  private fun find(node:AccessibilityNodeInfo?,label:String):AccessibilityNodeInfo?{if(node==null)return null;if(node.text?.toString()==label||node.contentDescription?.toString()==label)return node;for(i in 0 until node.childCount){val n=find(node.getChild(i),label);if(n!=null)return n};return null}
  private fun click(label:String){var n=find(uiAutomation.rootInActiveWindow,label)?:error("Missing node: $label");while(!n.isClickable){n=n.parent?:error("Node is not clickable: $label")};check(n.performAction(AccessibilityNodeInfo.ACTION_CLICK));Thread.sleep(1400)}
  override fun onStart(){val result=Bundle();try{
-  teslaMateService?.let{TeslaMateDeviceCheck(this,it).run();result.putString("result","PASS: TeslaMate home light/dark, trip map and charging detail using configured read-only service");finish(0,result);return}
+  teslaMateService?.let{TeslaMateDeviceCheck(this,it).run();result.putString("result","PASS: TeslaMate home, trip map, charging, statistics, monthly/annual reports, footprint, ledger, status and history against configured read-only service");finish(0,result);return}
   val activity=startActivitySync(Intent(targetContext,MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))as MainActivity
   val api=FixtureApi();val vault=Vault(activity);vault.save(JSONObject().put("address","https://fixture.invalid").put("user","界面验收示例").put("password","fixture-only").put("keep",true).put("auto",true).toString())
   val mode=mutableStateOf("light")

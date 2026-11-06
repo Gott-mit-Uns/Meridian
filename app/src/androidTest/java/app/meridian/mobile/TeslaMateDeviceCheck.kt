@@ -23,14 +23,36 @@ internal class TeslaMateDeviceCheck(private val instrumentation: Instrumentation
             if(find(instrumentation.uiAutomation.rootInActiveWindow,label,contains)!=null)return
             Thread.sleep(500)
         }
+        screenshot("failure")
         error("Screen did not show expected control: $label")
     }
     private fun click(label: String) {
-        waitFor(label)
-        var node=find(instrumentation.uiAutomation.rootInActiveWindow,label)?:error("Missing control")
-        while(!node.isClickable)node=node.parent?:error("Control is not clickable: $label")
-        check(node.performAction(AccessibilityNodeInfo.ACTION_CLICK))
-        Thread.sleep(700)
+        val candidates=mutableListOf<AccessibilityNodeInfo>()
+        fun collect(node:AccessibilityNodeInfo?){if(node==null)return
+            val values=listOfNotNull(node.text?.toString(),node.contentDescription?.toString())+node.actionList.mapNotNull{it.label?.toString()}
+            if(label in values)candidates.add(node)
+            for(i in 0 until node.childCount)collect(node.getChild(i))
+        }
+        fun scroll(node:AccessibilityNodeInfo?):Boolean {
+            if(node==null)return false
+            if(node.isScrollable&&node.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD))return true
+            for(i in 0 until node.childCount)if(scroll(node.getChild(i)))return true
+            return false
+        }
+        for(attempt in 0 until 20){
+            candidates.clear();collect(instrumentation.uiAutomation.rootInActiveWindow)
+            val node=candidates.mapNotNull{candidate->var parent:AccessibilityNodeInfo?=candidate;while(parent!=null&&!parent.isClickable)parent=parent.parent;parent?.takeIf{it.isEnabled&&it.isVisibleToUser}}
+                .minByOrNull{android.graphics.Rect().also(it::getBoundsInScreen).top}
+            if(node!=null){
+                node.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_SHOW_ON_SCREEN.id)
+                Thread.sleep(300)
+                if(node.performAction(AccessibilityNodeInfo.ACTION_CLICK)){Thread.sleep(700);return}
+            }
+            if(candidates.isEmpty()&&attempt%2==1)scroll(instrumentation.uiAutomation.rootInActiveWindow)
+            Thread.sleep(500)
+        }
+        screenshot("failure")
+        error("Control is not clickable: $label")
     }
     private fun screenshot(name: String) {
         Thread.sleep(1000)
@@ -41,6 +63,8 @@ internal class TeslaMateDeviceCheck(private val instrumentation: Instrumentation
     }
     fun run() {
         val activity=instrumentation.startActivitySync(Intent(instrumentation.targetContext,MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as MainActivity
+        instrumentation.runOnMainSync{activity.setContent{}}
+        instrumentation.waitForIdleSync()
         val vault=Vault(activity)
         vault.save(JSONObject().put("address",address).put("user","").put("password","").put("backend","TESLAMATE")
             .put("gpsCoordinates",true).put("keep",true).put("auto",true).toString())
@@ -60,6 +84,20 @@ internal class TeslaMateDeviceCheck(private val instrumentation: Instrumentation
         click("爱车")
         instrumentation.runOnMainSync{mode.value="dark"}
         screenshot("home-dark")
+        click("统计");waitFor("用车概况");waitFor("行驶里程")
+        screenshot("statistics-dark")
+        click("用车概况");click("月度报告");waitFor("月度用车回顾")
+        screenshot("monthly-dark")
+        click("月度报告");click("年度报告");waitFor("年度用车报告",true)
+        screenshot("annual-dark")
+        click("爱车");click("我的足迹");waitFor("查看全部到访排行")
+        screenshot("footprint-dark")
+        click("返回");click("用车账单");waitFor("本期已记金额");Thread.sleep(1800)
+        screenshot("ledger-dark")
+        click("返回");click("查看完整车况");waitFor("门锁与哨兵")
+        screenshot("status-dark")
+        click("查看车况历史与时间线");waitFor("车辆指标轨迹");Thread.sleep(1500)
+        screenshot("history-dark")
         // Leave a normal saved connection for manual acceptance on this dedicated emulator.
     }
 }

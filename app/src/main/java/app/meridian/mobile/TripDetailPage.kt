@@ -77,6 +77,14 @@ fun performance(raw:Any?):List<Pair<String,Double>> =flexibleArray(raw).objects(
      Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Text("最高速度",fontSize=14.sp,color=muted);Text(numberText(data.number("maxSpeed"))+" km/h",fontSize=14.sp,color=accent,fontWeight=FontWeight.SemiBold)}
      data.number("maxSpeed")?.let{speed->val fill=accent;val track=softWash;Canvas(Modifier.fillMaxWidth().height(5.dp)){drawRoundRect(track,cornerRadius=androidx.compose.ui.geometry.CornerRadius(8f));drawRoundRect(Brush.horizontalGradient(listOf(fill.copy(alpha=.45f),fill)),size=androidx.compose.ui.geometry.Size(size.width*(speed/180).toFloat().coerceIn(0f,1f),size.height),cornerRadius=androidx.compose.ui.geometry.CornerRadius(8f))}}
     }
+    if(data.optBoolean("_teslamate")){
+     val samples=data.optJSONObject("track")?.optJSONArray("speedSamples")?:JSONArray()
+     if(samples.length()>1){var curve by remember{mutableStateOf("speed")};Panel{SectionTitle("行程采样",Icons.Outlined.ShowChart)
+      CompactSegments(listOf("speed" to "速度","power" to "功率","batteryLevel" to "电量"),curve,{curve=it})
+      InteractiveTrend("行程采样 · "+if(curve=="speed")"速度"else if(curve=="power")"功率"else"电量",if(curve=="speed")"km/h"else if(curve=="power")"kW"else"%",chartSamples(samples,curve,dateKey="time"))
+      Text("展示实际采样的抽样曲线，缺失点不补零。",fontSize=12.sp,color=muted)
+     }}
+    }
     TripNotebook(api,data)
     Panel{SectionTitle("行程路径",Icons.Outlined.LocationOn);RouteDetailRow("起点",data.safeText("startLocation","出发地"),shortTime(data.safeText("tripStartTime")),Color(0xFF2EC786));RouteDetailRow("终点",data.safeText("endLocation","目的地"),shortTime(data.safeText("tripEndTime")),Color(0xFFFF685A))}
     if(data.optBoolean("_teslamate"))Text("能耗为 TeslaMate 按额定续航变化估算，缺失项保留为空。",fontSize=12.sp,color=muted)

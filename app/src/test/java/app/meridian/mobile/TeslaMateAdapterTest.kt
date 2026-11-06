@@ -77,6 +77,7 @@ class TeslaMateAdapterTest {
     @Test fun snapshotReadsTerminalPageAndReusesVerifiedResult() = runBlocking {
         val paths = mutableListOf<String>()
         val client = TeslaMateClient("https://test.invalid", read = { path ->
+            if("/meridian/" in path)throw HttpReadFailure(404)
             paths.add(path)
             when { path=="globalsettings" -> settings()
                 "page=1&" in path -> response("drives", JSONArray().put(drive()))
@@ -87,13 +88,17 @@ class TeslaMateAdapterTest {
         assertEquals(1, paths.count { "page=2&" in it })
     }
     @Test fun repeatedIdsNeverProduceAPartialTotal() = runBlocking {
-        val client = TeslaMateClient("https://test.invalid", read = { path -> if(path=="globalsettings")settings() else response("drives", JSONArray().put(drive())) })
+        val client = TeslaMateClient("https://test.invalid", read = { path ->
+            if("/meridian/" in path)throw HttpReadFailure(404)
+            if(path=="globalsettings")settings() else response("drives", JSONArray().put(drive())) })
         var rejected = false
         try { client.call("/car/trip/get", JSONObject().put("carId", 1), "1") } catch (_: IllegalArgumentException) { rejected = true }
         assertTrue(rejected)
     }
     @Test fun wrongVehicleEnvelopeIsRejected() = runBlocking {
-        val client = TeslaMateClient("https://test.invalid", read = { path -> if(path=="globalsettings")settings() else response("drives", JSONArray(), 2) })
+        val client = TeslaMateClient("https://test.invalid", read = { path ->
+            if("/meridian/" in path)throw HttpReadFailure(404)
+            if(path=="globalsettings")settings() else response("drives", JSONArray(), 2) })
         var rejected = false
         try { client.call("/car/trip/get", JSONObject().put("carId", 1), "1") } catch (_: IllegalArgumentException) { rejected = true }
         assertTrue(rejected)
@@ -101,6 +106,7 @@ class TeslaMateAdapterTest {
     @Test fun dateFilterIsPassedToTheServiceAndDoesNotShareAnAllHistoryCache() = runBlocking {
         val paths = mutableListOf<String>()
         val client = TeslaMateClient("https://test.invalid",read={ path ->
+            if("/meridian/" in path)throw HttpReadFailure(404)
             paths.add(path)
             if(path=="globalsettings")settings() else response("drives",JSONArray())
         })
@@ -127,6 +133,7 @@ class TeslaMateAdapterTest {
     @Test fun browsingManyDatesDoesNotKeepEveryHistoricalSnapshot() = runBlocking {
         var requests=0
         val client=TeslaMateClient("https://test.invalid",read={ path ->
+            if("/meridian/" in path)throw HttpReadFailure(404)
             if(path=="globalsettings")settings() else {requests++;response("drives",JSONArray())}
         })
         val first=java.time.LocalDate.of(2026,1,1)
@@ -138,6 +145,7 @@ class TeslaMateAdapterTest {
 
     @Test fun responseUnitsWinOverSettingsAndCachedRowsAreNotConvertedTwice() = runBlocking {
         val client=TeslaMateClient("https://test.invalid",read={path->
+            if("/meridian/" in path)throw HttpReadFailure(404)
             when {
                 path=="globalsettings" -> settings()
                 "page=2&" in path -> response("drives",JSONArray())

@@ -4,7 +4,7 @@
 
 # Meridian
 
-**连接每一次出发 · Xiaomi EV Mate 的非官方 Android 客户端**
+**连接每一次出发 · Xiaomi EV Mate / TeslaMate API 的非官方 Android 客户端**
 
 把车辆状态、行程、充电、足迹、用车报告和 AI 助手装进口袋。
 
@@ -17,7 +17,7 @@
 
 </div>
 
-> **使用前必须先部署 [Xiaomi EV Mate（xiaomiev-mate）](https://github.com/Ponyix/xiaomiev-mate)，并在其网页端完成账号与车辆配置。Meridian 是连接该服务的手机客户端，单独安装 APK 无法获取车辆数据。**
+> **使用前需部署 Xiaomi EV Mate 或 TeslaMate API，并完成相应车辆配置。Meridian 是连接这些服务的手机客户端，单独安装 APK 无法获取车辆数据。TeslaMate 接入方式见下文。**
 
 ## 项目介绍
 
@@ -27,7 +27,7 @@ Meridian 基于 Xiaomi EV Mate 提供的服务接口开发，面向已经部署�
 
 Meridian 与 Xiaomi EV Mate、Xiaomi/小米汽车不存在官方隶属或背书关系。车辆数据获取、同步任务及服务端 AI 能力由你部署的后端提供；可用功能以实际后端版本、车辆授权及返回数据为准。
 
-当前公开版本为 **0.52.0-preview**，仍处于持续迭代阶段。
+上游公开版本为 **0.52.0-preview**；本分支开发版本为 **0.53.0-preview**，增加 TeslaMate 接入，尚未正式发布。
 
 ## 界面预览
 
@@ -77,11 +77,20 @@ Meridian 与 Xiaomi EV Mate、Xiaomi/小米汽车不存在官方隶属或背书�
 ### 用车账单的数据口径
 
 - 账单主要保存在当前设备，独立于车辆服务端数据。
-- 自动充电费属于 **充电量 × 自定义电价的估算**，不等同于充电运营商实际账单；分时电价、服务费等可能造成差异。
+- 本机自动估算充电费属于 **充电量 × 自定义电价的估算**，不等同于充电运营商实际账单；分时电价、服务费等可能造成差异。
+- TeslaMate 模式优先导入服务端有效金额并标注原始记录、人工覆盖或估算来源；保留原始金额，缺失不补零，本机修改不回写 TeslaMate。
 - 每公里费用按同一统计期的已记录费用与有效行驶里程计算，未记录的支出不纳入；缺少有效里程时不计算。
 - 高速费采用手动记账，当前版本**没有高德路线费用估算功能**，无需额外部署路线服务。
 
 ## 安装与开始使用
+
+### TeslaMate 数据源
+
+登录页选择 **TeslaMate**，填写自己的 API 根地址（HTTPS，或明确填写局域网 HTTP 地址），按需填写已有的访问凭据和开启地图位置校正。普通 TeslaMate API 可读取首页、行程及充电基本数据；地区足迹、车况历史和费用来源需要本仓库 `teslamate-extension` 的只读增强接口。
+
+增强 API 基于 TeslaMate API 1.25.0 固定提交构建，不修改数据库结构：运行 `teslamate-extension/build.sh` 生成 Linux amd64 二进制，将二进制、上游 LICENSE 和本目录 Dockerfile 放入镜像构建目录后构建。`deploy.py validate` 可复用既有 API 容器配置进行独立端口验证；`activate --compose-file <实际配置文件>` 验证通过后切换原 API 并持久化镜像，失败恢复旧服务。该脚本面向现有 `teslamate-teslamateapi-1` 容器，拒绝多文件 Compose 项目，其他部署布局需先调整匹配。
+
+支持统计、月报/年报、足迹、账本、实际采样曲线与状态时间线；AI、远程视频及 ADAS 评分没有对应 TeslaMate 数据，不显示这些入口。下面的 Xiaomi EV Mate 部署与账号步骤适用于 Xiaomi 数据源。
 
 ### 1. 先部署 Xiaomi EV Mate
 

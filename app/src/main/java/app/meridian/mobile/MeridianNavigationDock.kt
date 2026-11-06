@@ -24,7 +24,7 @@ import kotlin.math.roundToInt
 
 /** Five-slot adaptation of 流影 LiquidDock; shared optics/bevel/shaders are copied unchanged. */
 @Composable fun MeridianNavigationDock(tab:Int,haze:HazeState,enabled:Boolean,onTab:(Int)->Unit,modifier:Modifier=Modifier,preview:Boolean=false,coreOnly:Boolean=false,onReselect:()->Unit={}){
- val items=if(coreOnly)listOf(0,1,4)else listOf(0,1,2,3,4);val slotTab=items.indexOf(tab).coerceAtLeast(0)
+ val items=if(coreOnly)listOf(0,1,3,4)else listOf(0,1,2,3,4);val slotTab=items.indexOf(tab).coerceAtLeast(0)
  val dark=LocalPalette.current.dark;val foreground=ink;val highlight=accent
  val options=LocalAppearance.current
  val navScale=navigationDensityScale(options.interfaceScale,options.navigationScale)

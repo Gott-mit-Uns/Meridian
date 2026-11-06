@@ -59,6 +59,7 @@ fun regionName(s:String)=s.replace(Regex("(维吾尔自治区|壮族自治区|�
  ImmersiveScrollingPage("我的足迹",onBack,action={ToolbarActionStrip(listOf(ToolbarAction(Icons.Outlined.Tune,"筛选足迹",active=days!=30||kind!="cities"){rangeSheet=true}))},refreshing=loading,onRefresh={refresh++},lastSynced=responseSyncTime(if(kind=="cities")nation else tracks)){
    Text((when(kind){"tracks"->"行驶轨迹";"frequent"->"高频路线";else->"全国足迹"})+" · "+(if(days==-1)"${customStart} 至 ${customEnd}"else if(days==0)"全部日期"else"最近 $days 天"),fontSize=12.sp,color=muted)
    CachedReadStatus(if(kind=="cities")nation else tracks){refresh++}
+   (if(kind=="cities")nation else tracks)?.safeText("coverageNote")?.takeIf{it.isNotBlank()}?.let{Text(it,fontSize=12.sp,color=muted)}
   if(loading)FlowLoading(Modifier.fillMaxWidth(),color=accent)
    if(error.isNotBlank())Panel{Text(error,color=MaterialTheme.colorScheme.error);TextButton(onClick={refresh++}){Text("重新加载")}}
    if(kind=="cities"){

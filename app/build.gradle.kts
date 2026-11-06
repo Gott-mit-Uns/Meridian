@@ -20,8 +20,8 @@ android {
         minSdk = 26
         targetSdk = 35
         testInstrumentationRunner = "app.meridian.mobile.VisualInspection"
-        versionCode = 52
-        versionName = "0.52.0"
+        versionCode = 53
+        versionName = "0.53.0"
     }
 
     signingConfigs.getByName("debug") {

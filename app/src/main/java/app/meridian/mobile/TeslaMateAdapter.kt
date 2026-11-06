@@ -65,6 +65,7 @@ internal fun tmDrive(row: JSONObject, units: TeslaMateUnits, gps: Boolean = true
         .put("startLocation", row.optString("start_address")).put("endLocation", row.optString("end_address"))
         .tmPut("mileageKm", units.distance(row.optJSONObject("odometer_details")?.let { tmNumber(it, "odometer_distance") }))
         .tmPut("durationMinutes", tmNumber(row, "duration_min"))
+        .tmPut("drivingMileage",distance?.times(1000)).tmPut("drivingDuration",tmNumber(row,"duration_min")?.times(60000))
         .tmPut("avgSpeed", units.distance(tmNumber(row, "speed_avg"))).tmPut("maxSpeed", units.distance(tmNumber(row, "speed_max")))
         .tmPut("totalPowerConsumption", tmNumber(row, "energy_consumed_net"))
         .tmPut("tripEnergyConsumption", consumption)
@@ -80,7 +81,7 @@ internal fun tmDrive(row: JSONObject, units: TeslaMateUnits, gps: Boolean = true
         sorted.filterIndexed { index, _ -> index % stride == 0 || index == sorted.lastIndex }.forEach { point ->
             val (lat, lon) = tmMapCoordinate(point.getDouble("latitude"), point.getDouble("longitude"), gps)
             samples.put(JSONObject().put("latitude", lat).put("longitude", lon).put("time", tmTime(point.getString("date")))
-                .tmPut("speed", units.distance(tmNumber(point, "speed"))))
+                .tmPut("speed", units.distance(tmNumber(point, "speed"))).tmPut("power",tmNumber(point,"power")).tmPut("batteryLevel",tmNumber(point,"battery_level")))
         }
         result.put("track", JSONObject().put("locationTrack", samples).put("speedSamples", samples))
     }
@@ -96,6 +97,7 @@ internal fun tmCharge(row: JSONObject, units: TeslaMateUnits): JSONObject {
         .put("startTime", start).put("endTime", end).put("locationName", row.optString("address"))
         .tmPut("chargeEnergy", tmNumber(row, "charge_energy_added")).tmPut("durationMinutes", tmNumber(row, "duration_min"))
         .tmPut("startSoc", battery?.let { tmNumber(it, "start_battery_level") }).tmPut("endSoc", battery?.let { tmNumber(it, "end_battery_level") })
+    battery?.let{result.tmPut("startBattery",tmNumber(it,"start_battery_level")).tmPut("endBattery",tmNumber(it,"end_battery_level"))}
     // API 1.25.0 collapses unknown costs to zero; omit cost until provenance is available.
     row.optJSONArray("charge_details")?.let { raw ->
         val samples = JSONArray()
@@ -111,11 +113,16 @@ internal fun tmCharge(row: JSONObject, units: TeslaMateUnits): JSONObject {
         result.put("samples", samples)
         val powers = (0 until samples.length()).mapNotNull { tmNumber(samples.getJSONObject(it), "currentPowerKw") }
         result.tmPut("peakPowerKw", powers.maxOrNull())
+        var integral=0.0;var seconds=0.0
+        samples.objects().zipWithNext().forEach{(a,b)->val dt=java.time.Duration.between(tmInstant(a.getString("sampleTime")),tmInstant(b.getString("sampleTime"))).toMillis()/1000.0
+            val p=tmNumber(a,"currentPowerKw");val q=tmNumber(b,"currentPowerKw")
+            if(dt>0&&dt<=600&&p!=null&&q!=null){integral+=(p+q)/2*dt;seconds+=dt}}
+        if(seconds>0)result.put("avgPowerKw",integral/seconds)
     }
     return result
 }
 
-internal val teslaMateHomeCards=setOf("vehicle","range","summary","condition","sentry","temperature","brief","recentTrip","recentCharge","trends","charging")
+internal val teslaMateHomeCards=setOf("vehicle","range","summary","condition","sentry","temperature","brief","recentTrip","recentCharge","trends","charging","ledger","analysis","energyTrend","comparison","history","report")
 internal fun tmSum(rows:List<JSONObject>,key:String):Double? = if(rows.any{tmNumber(it,key)==null})null else rows.sumOf{tmNumber(it,key)!!}
 
 internal fun tmState(status: JSONObject): String = when (status.optString("state")) {

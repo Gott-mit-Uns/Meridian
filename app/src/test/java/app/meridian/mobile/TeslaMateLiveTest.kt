@@ -33,4 +33,27 @@ class TeslaMateLiveTest {
         assertTrue(charging.getJSONArray("samples").length() > 0)
         assertFalse(charging.has("cost"))
     }
+    @Test fun configuredEnhancedServiceSupportsReportsFootprintsAndHistory() = runBlocking {
+        val address=System.getenv("TESLAMATE_INTEGRATION_BASE");assumeTrue(!address.isNullOrBlank())
+        val client=TeslaMateClient(connectionAddress(address!!,VehicleBackend.TESLAMATE))
+        val id=client.call("/car/get",null,"").getJSONArray("data").getJSONObject(0).getLong("id").toString()
+        val today=java.time.LocalDate.now(teslaMateZone)
+        val query=JSONObject().put("carId",id).put("startDate",today.minusDays(29).toString()).put("endDate",today.toString())
+        val stats=client.call("/statistics/energy-overview",query,id).getJSONObject("data")
+        assertTrue(stats.getJSONObject("periodDashboard").getJSONArray("metricGroups").length()>=4)
+        val monthly=client.call("/trip-month-stats/get",JSONObject().put("carId",id).put("month",today.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMM"))),id).getJSONObject("data")
+        assertTrue(monthly.has("monthMileage"));assertTrue(monthly.getJSONArray("dayMileages").length()>=28)
+        val footprint=client.call("/car/trip/cityFootprint/get",query,id).getJSONObject("data")
+        assertTrue(footprint.getJSONObject("summary").getInt("cityCount")>0)
+        val tracks=client.call("/car/trip/trackMap",query,id).getJSONObject("data")
+        assertTrue(tracks.getJSONArray("tracks").length() in 1..100)
+        val historical=client.call("/car/status/health",query,id).getJSONObject("data")
+        assertTrue(historical.getJSONArray("metricTrail").length()>0)
+        val current=client.call("/car/status/current",query,id).getJSONObject("data")
+        assertTrue(current.has("status"));assertTrue(current.has("batteryHealth"))
+        val charge=client.call("/car/charge/history",query,id).getJSONObject("data").getJSONArray("list").getJSONObject(0)
+        assertTrue(charge.getBoolean("_costProvenance"))
+        assertTrue(client.call("/car/charge/current",query,id).getJSONObject("data").has("active"))
+    }
+
 }

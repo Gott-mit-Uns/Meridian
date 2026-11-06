@@ -108,7 +108,7 @@ internal fun ledgerSubtitle(entry:JSONObject):String{
     if(entry.optString("source")=="charge"){val start=entry.number("startBattery");val end=entry.number("endBattery");if(start!=null&&end!=null){Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Text(numberText(start,0)+"%",color=muted);Text(numberText(end,0)+"%",color=color)};Canvas(Modifier.fillMaxWidth().height(8.dp)){drawRoundRect(color.copy(alpha=.12f),cornerRadius=androidx.compose.ui.geometry.CornerRadius(5.dp.toPx()));drawRoundRect(color, size=androidx.compose.ui.geometry.Size(size.width*(end/100).coerceIn(0.0,1.0).toFloat(),size.height),cornerRadius=androidx.compose.ui.geometry.CornerRadius(5.dp.toPx()))}}}
     entry.optString("unitPrice").takeIf{it.isNotBlank()}?.let{LedgerDetailLine("本笔电价","¥$it / kWh")};if(entry.optString("source")=="charge")entry.number("durationMinutes")?.let{LedgerDetailLine("充电时长",numberText(it)+" 分钟")}
     fields.optString("place").takeIf{it.isNotBlank()}?.let{LedgerDetailLine("充电场所",privateAddress(it))}
-    Text(when{entry.optString("source")=="charge"->"电量来自充电记录，费用按设置单价估算";entry.optString("chargeBasis")=="cost"->"电量由费用÷电价推算，含服务费时可能存在差异";else->"费用按填写电量×电价计算"},fontSize=12.sp,lineHeight=19.sp,color=muted)
+    Text(when{entry.optString("source")=="teslamate"->"金额来自 TeslaMate，来源："+entry.safeText("costSource","源记录")+"；本机不重新按电价计算。";entry.optString("source")=="charge"->"电量来自充电记录，费用按设置单价估算";entry.optString("chargeBasis")=="cost"->"电量由费用÷电价推算，含服务费时可能存在差异";entry.optString("chargeBasis")=="energy"->"费用按填写电量×电价计算";else->"金额以当前记账为准，未自动推算费用"},fontSize=12.sp,lineHeight=19.sp,color=muted)
    }
    "toll"->LedgerPaper{
     Text("通行票据",fontSize=16.sp,fontWeight=FontWeight.SemiBold,color=color)
@@ -131,7 +131,7 @@ internal fun ledgerSubtitle(entry:JSONObject):String{
    quote.optString("roads").takeIf{it.isNotBlank()}?.let{Text(privateProse(it),fontSize=13.sp,color=muted)}
    Text("当前规划路线，仅供费用参考；以实际支付为准。",fontSize=12.sp,color=muted)
   }}
-  LedgerPaper{LedgerDetailLine("记账日期",entry.optString("date"));LedgerDetailLine("费用分类",ledgerCategoryName(id));LedgerDetailLine("来源",if(entry.optString("source")=="charge")"充电记录 · 自动估算"else tollEntrySource(entry));ledgerNote(entry).takeIf{it.isNotBlank()}?.let{Text("备注",fontSize=13.sp,color=muted);Text(privateProse(it),fontSize=15.sp,lineHeight=23.sp,color=ink)}}
+  LedgerPaper{LedgerDetailLine("记账日期",entry.optString("date"));LedgerDetailLine("费用分类",ledgerCategoryName(id));LedgerDetailLine("来源",if(entry.optString("source")=="teslamate")"TeslaMate · "+entry.safeText("costSource","源记录")else if(entry.optString("source")=="charge")"充电记录 · 自动估算"else tollEntrySource(entry));ledgerNote(entry).takeIf{it.isNotBlank()}?.let{Text("备注",fontSize=13.sp,color=muted);Text(privateProse(it),fontSize=15.sp,lineHeight=23.sp,color=ink)}}
   CinemaTonalButton(onEdit,Modifier.fillMaxWidth()){Icon(Icons.Outlined.Edit,null,Modifier.size(18.dp));Spacer(Modifier.width(8.dp));Text("编辑账单")}
  }
 }
