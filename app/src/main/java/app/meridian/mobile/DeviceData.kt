@@ -29,20 +29,20 @@ internal fun cacheRequestKey(scope:String,path:String,body:JSONObject?):String{v
 
 internal fun Api.peekRead(path:String,body:JSONObject?):JSONObject?{
  if(accountScope.isBlank()||path !in cacheableReads)return null
- val id=cacheRequestKey(base+"|"+accountScope,path,body);pageReadMemory.get(id)?.let{return it};val item=DeviceData.read("cache:"+id)
+ val id=cacheRequestKey(cacheScope,path,body);pageReadMemory.get(id)?.let{return it};val item=DeviceData.read("cache:"+id)
  val response=item.optJSONObject("response")?:return if(path=="/dashboard/get"&&body?.has("pageNum")==true)peekRead(path,JSONObject().put("carId",body.opt("carId")).put("statDate",body.optString("statDate",java.time.LocalDate.now().toString())))else null
  PrivacyAddressBook.observe(response)
  val time=item.optLong("time");response.put("_meridianCache",true).put("_meridianUpdatedAt",time);response.optJSONObject("data")?.put("_meridianCache",true)?.put("_meridianUpdatedAt",time)
  pageReadMemory.put(id,response)
  return response
 }
-internal fun Api.saveRead(path:String,body:JSONObject?,response:JSONObject,requestScope:String=accountScope,requestBase:String=base){
+internal fun Api.saveRead(path:String,body:JSONObject?,response:JSONObject,requestScope:String=accountScope,requestBase:String=base,requestCacheScope:String=cacheScope){
  synchronized(DeviceData){
- if(requestScope!=accountScope||requestBase!=base)return
+ if(requestScope!=accountScope||requestBase!=base||requestCacheScope!=cacheScope)return
  if(accountScope.isBlank()||path !in cacheableReads)return
  if(response.toString().length>1000000){val time=System.currentTimeMillis();response.put("_meridianUpdatedAt",time);response.optJSONObject("data")?.put("_meridianUpdatedAt",time);return}
  PrivacyAddressBook.observe(response)
- val time=System.currentTimeMillis();val id=cacheRequestKey(requestBase+"|"+requestScope,path,body)
+ val time=System.currentTimeMillis();val id=cacheRequestKey(requestCacheScope,path,body)
  DeviceData.write("cache:"+id,JSONObject().put("time",time).put("response",response))
  val preferences=DeviceData.context.getSharedPreferences("cache-index",0);val keys=preferences.getStringSet("keys",emptySet()).orEmpty().toMutableSet();keys.add(DeviceData.hash("cache:"+id));if(keys.size>100){val remove=keys.first();keys.remove(remove);DeviceData.context.getSharedPreferences("device-data",0).edit().remove(remove).apply()};preferences.edit().putStringSet("keys",keys).apply()
  response.put("_meridianUpdatedAt",time);response.optJSONObject("data")?.put("_meridianUpdatedAt",time)

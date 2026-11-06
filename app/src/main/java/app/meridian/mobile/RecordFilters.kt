@@ -24,8 +24,8 @@ internal data class RecordFilterState(val days:Int=0,val dates:Pair<LocalDate,Lo
   RecordDateRange(draft.dates){draft=draft.copy(dates=it,days=-1)}
   if(draft.days==-1)draft.dates?.let{Text("${it.first} 至 ${it.second}",fontSize=12.sp,color=muted)}
   SmallSelectionMenu(draft.order,listOf("desc" to "时间倒序","asc" to "时间正序"),{draft=draft.copy(order=it)})
-  if(charging){CompactSegments(listOf("all" to "全部类型","fast" to "快充","slow" to "慢充"),draft.chargeType,{draft=draft.copy(chargeType=it)});if(carId!=null)ChargeDetection(api,carId,onRefresh)}
-  else{
+  if(charging&&!api.isTeslaMate){CompactSegments(listOf("all" to "全部类型","fast" to "快充","slow" to "慢充"),draft.chargeType,{draft=draft.copy(chargeType=it)});if(carId!=null)ChargeDetection(api,carId,onRefresh)}
+  else if(!charging&&!api.isTeslaMate){
    CompactSegments(listOf("all" to "全部行程","long" to "长途","short" to "短途"),draft.tripType,{draft=draft.copy(tripType=it)})
    val end=if(draft.days==-1)draft.dates?.second else if(draft.days>0)LocalDate.now()else null
    val start=if(draft.days==-1)draft.dates?.first else if(draft.days>0)LocalDate.now().minusDays(draft.days-1L)else null

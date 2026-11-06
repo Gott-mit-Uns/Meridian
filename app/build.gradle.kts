@@ -13,7 +13,7 @@ val localSettings=Properties().apply {
 
 android {
     namespace = "app.meridian.mobile"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "app.meridian.mobile"

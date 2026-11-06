@@ -27,7 +27,7 @@ import org.json.*
   if(samples.length()>0){CompactSegments(listOf("power" to "功率","soc" to "电量","voltage" to "电压","current" to "电流"),chart,{chart=it});val key=when(chart){"soc"->"batteryLevel";"voltage"->"electricVoltageV";"current"->"electricCurrentA";else->"currentPowerKw"};val unit=when(chart){"soc"->"%";"voltage"->"V";"current"->"A";else->"kW"};InteractiveTrend("充电过程",unit,chartSamples(samples,key,dateKey="sampleTime"))}
   TextButton({expanded=!expanded}){Text(if(expanded)"收起详细参数"else"查看更多参数")}
   if(expanded)Panel{Readable(data)}
-  if(api!=null)ChargeMaintenance(api,data,onReload={
+  if(api!=null&&!api.isTeslaMate)ChargeMaintenance(api,data,onReload={
    val id=data.opt("recordId")?:data.opt("id")?:throw Exception("记录缺少编号")
    data=api.call("/car/charge/detail",JSONObject().put("recordId",id)).optJSONObject("data")?:throw Exception("充电详情读取失败");onChanged()
   },onDeleted={onChanged();onClose()})

@@ -13,11 +13,13 @@ import java.io.File
 
 /** Device-only visual and lifecycle checks with clearly synthetic service data. */
 class VisualInspection:Instrumentation(){
- override fun onCreate(arguments:Bundle?){super.onCreate(arguments);start()}
+ private var teslaMateService:String?=null
+ override fun onCreate(arguments:Bundle?){super.onCreate(arguments);teslaMateService=arguments?.getString("teslamateService");start()}
  private fun screenshot(name:String){Thread.sleep(1000);val bitmap=uiAutomation.takeScreenshot()?:error("No screenshot");val dir=File(targetContext.filesDir,"visual-qa").apply{mkdirs()};File(dir,"$name.png").outputStream().use{bitmap.compress(Bitmap.CompressFormat.PNG,100,it)}}
  private fun find(node:AccessibilityNodeInfo?,label:String):AccessibilityNodeInfo?{if(node==null)return null;if(node.text?.toString()==label||node.contentDescription?.toString()==label)return node;for(i in 0 until node.childCount){val n=find(node.getChild(i),label);if(n!=null)return n};return null}
  private fun click(label:String){var n=find(uiAutomation.rootInActiveWindow,label)?:error("Missing node: $label");while(!n.isClickable){n=n.parent?:error("Node is not clickable: $label")};check(n.performAction(AccessibilityNodeInfo.ACTION_CLICK));Thread.sleep(1400)}
  override fun onStart(){val result=Bundle();try{
+  teslaMateService?.let{TeslaMateDeviceCheck(this,it).run();result.putString("result","PASS: TeslaMate home light/dark, trip map and charging detail using configured read-only service");finish(0,result);return}
   val activity=startActivitySync(Intent(targetContext,MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))as MainActivity
   val api=FixtureApi();val vault=Vault(activity);vault.save(JSONObject().put("address","https://fixture.invalid").put("user","界面验收示例").put("password","fixture-only").put("keep",true).put("auto",true).toString())
   val mode=mutableStateOf("light")
